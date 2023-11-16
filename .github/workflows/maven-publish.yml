@@ -28,9 +28,9 @@ jobs:
         settings-path: ${{ github.workspace }} # location for the settings.xml file
 
     - name: Install Neo4j Dataflow Template
-      run: mvn -V -B --no-transfer-progress install --file DataflowTemplates/pom.xml -am -pl v2/googlecloud-to-neo4j -DskipTests -Djib.skip
+      run: mvn --show-version --batch-mode --no-transfer-progress install --file DataflowTemplates/pom.xml --also-make --projects v2/googlecloud-to-neo4j -DskipTests -Djib.skip
     - name: Build with Maven
-      run: mvn -B --no-transfer-progress package --file pom.xml
+      run: mvn --show-version --batch-mode --no-transfer-progress package --file pom.xml
 
     - name: Publish to GitHub Packages Apache Maven
       run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml

@@ -15,13 +15,15 @@ jobs:
       with:
         repository: 'GoogleCloudPlatform/DataflowTemplates'
         path: 'DataflowTemplates'
+
     - name: Set up JDK
       uses: actions/setup-java@v3
       with:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+
     - name: Install Neo4j Dataflow Template
-      run: mvn -V -B --no-transfer-progress install --file DataflowTemplates/pom.xml -am -pl v2/googlecloud-to-neo4j -DskipTests -Djib.skip
+      run: mvn --show-version --batch-mode --no-transfer-progress install --file DataflowTemplates/pom.xml --also-make --projects v2/googlecloud-to-neo4j -DskipTests -Djib.skip
     - name: Build with Maven
-      run: mvn -V -B --no-transfer-progress package --file pom.xml
+      run: mvn --show-version --batch-mode --no-transfer-progress package --file pom.xml
