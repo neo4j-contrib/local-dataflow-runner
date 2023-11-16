@@ -23,6 +23,6 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Install Neo4j Dataflow Template
-      run: mvn -V -B install --file DataflowTemplates/pom.xml -am -pl v2/googlecloud-to-neo4j -DskipTests -Djib.skip
+      run: mvn -V -B --no-transfer-progress install --file DataflowTemplates/pom.xml -am -pl v2/googlecloud-to-neo4j -DskipTests -Djib.skip
     - name: Build with Maven
-      run: mvn -V -B package --file pom.xml
+      run: mvn -V -B --no-transfer-progress package --file pom.xml
