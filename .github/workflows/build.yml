@@ -17,6 +17,7 @@ jobs:
       with:
         clean: false
         repository: 'GoogleCloudPlatform/DataflowTemplates'
+        path: 'DataflowTemplates'
     - name: Set up JDK
       uses: actions/setup-java@v3
       with:
