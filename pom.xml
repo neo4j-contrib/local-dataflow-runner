@@ -8,7 +8,7 @@
     <artifactId>local-runner</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <name>local-runner</name>
+    <name>local-neo4j-dataflow-runner</name>
     <url>https://neo4j.com/docs/dataflow-bigquery/</url>
 
     <licenses>
@@ -21,7 +21,7 @@
         <repository>
             <id>github</id>
             <name>Github Packages</name>
-            <url>https://maven.pkg.github.com/fbiville/local-dataflow-runner</url>
+            <url>https://maven.pkg.github.com/neo4j-contrib/local-dataflow-runner</url>
         </repository>
     </distributionManagement>
 
