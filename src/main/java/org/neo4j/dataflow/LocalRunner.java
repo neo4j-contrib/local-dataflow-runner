@@ -14,15 +14,21 @@ import org.apache.beam.it.gcp.artifacts.utils.ArtifactUtils;
 import org.apache.beam.it.gcp.dataflow.DirectRunnerClient;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.beam.it.neo4j.Neo4jResourceManager;
+import org.apache.beam.it.neo4j.conditions.Neo4jQueryCheck;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Option;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 @Command(name = "local-dataflow", version = "0.0.1", mixinStandardHelpOptions = true)
 public class LocalRunner implements Runnable, AutoCloseable {
@@ -44,6 +50,9 @@ public class LocalRunner implements Runnable, AutoCloseable {
     Duration maxTimeout = Duration.ofMinutes(5);
     @Option(names = {"--interval-check-duration", "-i"}, description = "Execution completion check interval")
     Duration checkInterval = Duration.ofSeconds(5);
+    @Option(names = {"--count-query-check", "-c"}, description = "Count query checks (syntax: \"<count>:<Cypher count query>\" with a single \"count\" column)", converter = CountQueryCheckConverter.class)
+    Set<CountQueryCheck> countQueryChecks = new HashSet<>();
+
 
     public static void main(String[] args) {
         var localRunner = new LocalRunner();
@@ -123,13 +132,19 @@ public class LocalRunner implements Runnable, AutoCloseable {
     }
 
     private void waitUntilDone() {
+        Neo4jQueryCheck[] conditions = countQueryChecks.stream()
+                .map(check -> check.asRunnableCondition(neo4j))
+                .toList()
+                .toArray(new Neo4jQueryCheck[0]);
         new PipelineOperator(launcher)
-                .waitUntilDone(Config.builder()
-                        .setJobId(execution.jobId())
-                        .setProject(project)
-                        .setRegion(region)
-                        .setTimeoutAfter(maxTimeout).setCheckAfter(checkInterval)
-                        .build());
+                .waitForCondition(
+                        Config.builder()
+                                .setJobId(execution.jobId())
+                                .setProject(project)
+                                .setRegion(region)
+                                .setTimeoutAfter(maxTimeout).setCheckAfter(checkInterval)
+                                .build(),
+                        conditions);
     }
 
     private String gcsPath(String artifactId) {
@@ -146,5 +161,38 @@ public class LocalRunner implements Runnable, AutoCloseable {
                   "pwd": "%s"
                 }
                 """.formatted(neo4j.getUri(), neo4j.getDatabaseName(), neo4j.getAdminPassword());
+    }
+}
+
+final class CountQueryCheckConverter implements ITypeConverter<CountQueryCheck> {
+
+    @Override
+    public CountQueryCheck convert(String value) {
+        int index = value.indexOf(":");
+        if (index == -1) {
+            throw new IllegalArgumentException("count queries must be written as: <expected_count>:<count_query> (e.g.: \"42:RETURN 42 AS count\"");
+        }
+        long expectedCount = Long.parseLong(value.substring(0, index), 10);
+        String query = value.substring(index + 1);
+        return new CountQueryCheck(expectedCount, query);
+    }
+}
+
+record CountQueryCheck(long expectedCount, String query) {
+
+    public Neo4jQueryCheck asRunnableCondition(Neo4jResourceManager neo4j) {
+        return Neo4jQueryCheck.builder(neo4j)
+                .setQuery(this.query())
+                .setExpectedResult(List.of(Map.of("count", this.expectedCount())))
+                .build();
+    }
+
+
+    @Override
+    public String toString() {
+        return "CountQueryCheck{" +
+               "expectedCount=" + expectedCount +
+               ", countQuery='" + query + '\'' +
+               '}';
     }
 }
