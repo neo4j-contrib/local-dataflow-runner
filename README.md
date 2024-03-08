@@ -7,6 +7,7 @@
  - Docker
  - GCP account with Dataflow enabled
  - GCS bucket accessible for writes
+ - [gcloud CLI](https://cloud.google.com/sdk/docs/install)
 
 ## Building the CLI
 
@@ -53,6 +54,7 @@ For the guide, you will need:
  - to know your GCP project name
  - to pick a GCS bucket name accessible for writes
  - a running Docker Daemon
+ - to have set up [Google Application Default Credentials](https://cloud.google.com/docs/authentication/provide-credentials-adc#how-to)
 
 Create a local spec file, let's save it somewhere (the rest of the guide assumes `/path/to/spec.json`):
 
@@ -93,6 +95,11 @@ Create a local spec file, let's save it somewhere (the rest of the guide assumes
     }
   ]
 }
+```
+
+If not already set up google authentication through gcloud CLI, run
+```shell
+gcloud auth application-default login
 ```
 
 Assuming the current location is the root of this project, now run:
