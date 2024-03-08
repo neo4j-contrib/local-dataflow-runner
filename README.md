@@ -111,4 +111,6 @@ java -jar ./target/local-runner-1.0-SNAPSHOT-shaded.jar \
   --spec=/path/to/spec.json
 ```
 And that's it!
-A local Neo4j instance is going to be started via Docker and the pipeline will run directly on your machine. 
+A local Neo4j instance is going to be started via Docker and the pipeline will run directly on your machine.
+All logs are sent to standard output directly.
+Once the execution is done, the container is shut down.
