@@ -34,7 +34,11 @@ And see some output similar to:
 ```shell
 Usage: local-dataflow [-hV] -b=<bucket> [-i=<checkInterval>] -p=<project>
                       -r=<region> -s=<spec> [-t=<maxTimeout>]
+                      [-c=<countQueryChecks>]...
   -b, --bucket=<bucket>     GCS bucket
+  -c, --count-query-check=<countQueryChecks>
+                            Count query checks (syntax: "<count>:<Cypher count
+                              query>" with a single "count" column)
   -h, --help                Show this help message and exit.
   -i, --interval-check-duration=<checkInterval>
                             Execution completion check interval
@@ -63,7 +67,6 @@ Create a local spec file, let's save it somewhere (the rest of the guide assumes
   "sources": [
     {
       "type": "text",
-      "format": "EXCEL",
       "name": "persons",
       "ordered_field_names": "id",
       "data": [
@@ -114,3 +117,15 @@ And that's it!
 A local Neo4j instance is going to be started via Docker and the pipeline will run directly on your machine.
 All logs are sent to standard output directly.
 Once the execution is done, the container is shut down.
+
+You can also specify Cypher query checks to make sure the data is created in the way you expect:
+
+```shell
+java -jar ./target/local-runner-1.0-SNAPSHOT-shaded.jar \
+  --project=<YOUR GCP PROJECT> \
+  --region=<YOUR GCP REGION> \
+  --bucket=<YOUR GCS BUCKET> \
+  --spec=/path/to/spec.json \
+  --count-query-check="5:MATCH (p:Person) RETURN count(p) AS count" \
+  --count-query-check="0:MATCH (p:Person) WHERE NOT p.id STARTS WITH 'person' RETURN count(p) AS count"
+```
