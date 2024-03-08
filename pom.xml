@@ -49,9 +49,9 @@
             <version>${dataflow-template.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.google.cloud.teleport</groupId>
-            <artifactId>it-neo4j</artifactId>
-            <version>${dataflow-template.version}</version>
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-it-neo4j</artifactId>
+            <version>2.54.0</version>
         </dependency>
     </dependencies>
 
