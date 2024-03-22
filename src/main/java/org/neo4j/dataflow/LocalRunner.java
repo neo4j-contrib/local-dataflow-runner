@@ -132,19 +132,23 @@ public class LocalRunner implements Runnable, AutoCloseable {
     }
 
     private void waitUntilDone() {
-        Neo4jQueryCheck[] conditions = countQueryChecks.stream()
-                .map(check -> check.asRunnableCondition(neo4j))
-                .toList()
-                .toArray(new Neo4jQueryCheck[0]);
-        new PipelineOperator(launcher)
-                .waitForCondition(
-                        Config.builder()
-                                .setJobId(execution.jobId())
-                                .setProject(project)
-                                .setRegion(region)
-                                .setTimeoutAfter(maxTimeout).setCheckAfter(checkInterval)
-                                .build(),
-                        conditions);
+        Config config = Config.builder()
+                .setJobId(execution.jobId())
+                .setProject(project)
+                .setRegion(region)
+                .setTimeoutAfter(maxTimeout).setCheckAfter(checkInterval)
+                .build();
+        PipelineOperator operator = new PipelineOperator(launcher);
+        if (countQueryChecks.isEmpty()) {
+            operator.waitUntilDone(config);
+            return;
+        }
+        operator.waitForCondition(
+                config,
+                countQueryChecks.stream()
+                        .map(check -> check.asRunnableCondition(neo4j))
+                        .toList()
+                        .toArray(new Neo4jQueryCheck[0]));
     }
 
     private String gcsPath(String artifactId) {
