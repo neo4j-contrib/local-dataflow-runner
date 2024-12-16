@@ -9,12 +9,18 @@ import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
 import org.apache.beam.it.common.PipelineLauncher.LaunchInfo;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.PipelineOperator.Config;
+import org.apache.beam.it.common.PipelineOperator.Result;
 import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.gcp.artifacts.utils.ArtifactUtils;
 import org.apache.beam.it.gcp.dataflow.DirectRunnerClient;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.beam.it.neo4j.Neo4jResourceManager;
 import org.apache.beam.it.neo4j.conditions.Neo4jQueryCheck;
+import org.checkerframework.checker.initialization.qual.Initialized;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.UnknownKeyFor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
@@ -32,6 +38,8 @@ import java.util.Set;
 
 @Command(name = "local-dataflow", version = "0.0.1", mixinStandardHelpOptions = true)
 public class LocalRunner implements Runnable, AutoCloseable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocalRunner.class);
 
     private GcsResourceManager gcs;
     private Neo4jResourceManager neo4j;
@@ -70,13 +78,24 @@ public class LocalRunner implements Runnable, AutoCloseable {
 
         uploadTemplateInputs();
         execution = startPipeline(credentials);
-        waitUntilDone();
+        Result result = waitUntilDone();
+        boolean conditionsSet = !countQueryChecks.isEmpty();
+        if (conditionsSet && result != Result.CONDITION_MET) {
+            throw new RuntimeException("Conditions not met. Please check the above logs");
+        }
+        if (!conditionsSet && result != Result.LAUNCH_FINISHED) {
+            throw new RuntimeException("Execution failed. Please check the above logs");
+        }
     }
 
     @Override
     public void close() {
         stopPipeline();
-        ResourceManagerUtils.cleanResources(gcs, neo4j);
+        try {
+            ResourceManagerUtils.cleanResources(gcs, neo4j);
+        } catch (Exception e) {
+            LOGGER.warn("Could not properly clean up resources: {}", e.getMessage());
+        }
     }
 
     private void uploadTemplateInputs() {
@@ -131,7 +150,7 @@ public class LocalRunner implements Runnable, AutoCloseable {
         return String.format("local-runner-%d-%s", System.currentTimeMillis(), suffix);
     }
 
-    private void waitUntilDone() {
+    private Result waitUntilDone() {
         Config config = Config.builder()
                 .setJobId(execution.jobId())
                 .setProject(project)
@@ -141,9 +160,9 @@ public class LocalRunner implements Runnable, AutoCloseable {
         PipelineOperator operator = new PipelineOperator(launcher);
         if (countQueryChecks.isEmpty()) {
             operator.waitUntilDone(config);
-            return;
+            return null;
         }
-        operator.waitForCondition(
+        return operator.waitForCondition(
                 config,
                 countQueryChecks.stream()
                         .map(check -> check.asRunnableCondition(neo4j))
