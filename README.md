@@ -11,10 +11,22 @@
 
 ## Building the CLI
 
-First, build the `googlecloud-to-neo4j` template locally:
+First, clone the `googlecloud-to-neo4j` template locally:
 
 ```shell
-git clone git@github.com:GoogleCloudPlatform/DataflowTemplates.git
+git clone https://github.com/GoogleCloudPlatform/DataflowTemplates.git
+```
+
+> **NOTE**: If you want to align with the template version currently deployed in your GCP region, run the following commands after cloning the `DataflowTemplates` repository (here the region is set to `europe-west8`):
+>
+> ```shell
+> tag=$(gsutil ls gs://dataflow-templates-europe-west8/ | grep -v latest | sort -V -r | head -n 1 | cut -d/ -f4)
+> git checkout "${tag}"
+> ```
+
+Run the following to locally cache the template:
+
+```shell
 mvn --file DataflowTemplates/pom.xml --also-make --projects v2/googlecloud-to-neo4j install -DskipTests -Djib.skip
 ```
 
