@@ -67,6 +67,7 @@ public class LocalRunner implements Runnable, AutoCloseable {
 
     @Override
     public void run() {
+        validate();
         GoogleCredentials credentials = credentials();
         gcs = GcsResourceManager.builder(bucket, getClass().getSimpleName(), credentials).build();
         neo4j = Neo4jResourceManager.builder(executionId())
@@ -82,6 +83,15 @@ public class LocalRunner implements Runnable, AutoCloseable {
         }
         if (!conditionsSet && result != Result.LAUNCH_FINISHED) {
             throw new RuntimeException("Execution failed. Please check the above logs");
+        }
+    }
+
+    private void validate() {
+        if (!spec.exists()) {
+            throw new IllegalArgumentException("Spec file %s does not exist".formatted(spec.getPath()));
+        }
+        if (!spec.isFile()) {
+            throw new IllegalArgumentException("Path %s is not a regular file".formatted(spec.getPath()));
         }
     }
 
