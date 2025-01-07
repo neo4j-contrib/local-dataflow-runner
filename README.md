@@ -20,7 +20,7 @@ git clone https://github.com/GoogleCloudPlatform/DataflowTemplates.git
 > **NOTE**: If you want to align with the template version currently deployed in your GCP region, run the following commands after cloning the `DataflowTemplates` repository (here the region is set to `europe-west8`):
 >
 > ```shell
-> tag=$(gsutil ls gs://dataflow-templates-europe-west8/ | grep -v latest | sort -V -r | head -n 1 | cut -d/ -f4)
+> tag=$(gsutil ls gs://dataflow-templates-europe-west8/ | grep -E '\d{4}-\d{2}-\d{2}' | sort -V -r | head -n 1 | cut -d/ -f4)
 > git checkout "${tag}"
 > ```
 
